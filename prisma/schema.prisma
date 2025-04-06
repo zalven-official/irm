@@ -30,49 +30,58 @@ enum UserStatus {
 }
 
 model UserCase {
-  id     Int    @id @default(autoincrement())
-  year   Int
-  where  String
-  case   String
-  reason String
-  User   User?  @relation(fields: [userId], references: [id])
-  userId Int?
+  id        Int      @id @default(autoincrement())
+  year      Int
+  where     String
+  case      String
+  reason    String
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model UserEducationalAttainment {
-  id         Int    @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   schoolname String
   education  String
-  User       User?  @relation(fields: [userId], references: [id])
+  User       User?    @relation(fields: [userId], references: [id])
   userId     Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model UserChildren {
-  id         Int        @id @default(autoincrement())
-  firstname  String
-  lastname   String
-  middlename String
-  birthday   DateTime
-  gender     UserGender
-
-  UserRelationship   User? @relation(fields: [userRelationshipId], references: [id])
+  id                 Int        @id @default(autoincrement())
+  firstname          String
+  lastname           String
+  middlename         String
+  birthday           DateTime
+  gender             UserGender
+  UserRelationship   User?      @relation(fields: [userRelationshipId], references: [id])
   userRelationshipId Int?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 }
 
 model Position {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String?
   description String
   User        User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Subject {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String?
   description String
-  disabled    Boolean @default(false)
-  User        User?   @relation(fields: [userId], references: [id])
+  disabled    Boolean  @default(false)
+  User        User?    @relation(fields: [userId], references: [id])
   userId      Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model User {
@@ -117,13 +126,18 @@ model User {
 
   positionId Int?
   churchId   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ChurchImage {
-  id       Int     @id @default(autoincrement())
-  image    String?
-  Church   Church? @relation(fields: [churchId], references: [id])
-  churchId Int?
+  id        Int      @id @default(autoincrement())
+  image     String?
+  Church    Church?  @relation(fields: [churchId], references: [id])
+  churchId  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Church {
@@ -134,4 +148,7 @@ model Church {
   latitude  Int
   longitude Int
   User      User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
