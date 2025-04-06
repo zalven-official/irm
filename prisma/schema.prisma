@@ -74,14 +74,23 @@ model Position {
 }
 
 model Subject {
-  id          Int      @id @default(autoincrement())
-  name        String?
-  description String
-  disabled    Boolean  @default(false)
-  User        User?    @relation(fields: [userId], references: [id])
-  userId      Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int            @id @default(autoincrement())
+  name         String?
+  description  String
+  disabled     Boolean        @default(false)
+  userSubjects UserSubjects[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model UserSubjects {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  subjectId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
@@ -122,7 +131,7 @@ model User {
   children              UserChildren[]
   eudcationalAttainment UserEducationalAttainment[]
   cases                 UserCase[]
-  subject               Subject[]
+  userSubjects          UserSubjects[]
 
   positionId Int?
   churchId   Int?
