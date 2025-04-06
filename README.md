@@ -10,4 +10,14 @@
   - ✅ A subject route for inputting subject 
 - ✅ Worker route
   - ✅ Worker page: Only information page dashboard
-Setup middleware sample
+
+
+✅ Setup middleware sample
+- ✅ If admin logged in the go to /page/admin
+- ✅ If worker logged in go to /page/worker
+- ✅  if not logged in the just go directly to /page/public
+
+
+- Navigation for admin
+- footer for all
+- 
