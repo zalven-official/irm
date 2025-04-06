@@ -19,5 +19,9 @@
 
 
 - ✅ Navigation for admin
-- footer for all
-- 
+- ✅ footer for admin
+
+- create prisma db ang generate schema
+- ✅ admin: create admin account
+- admin: create worker account
+- admin: create profile edit

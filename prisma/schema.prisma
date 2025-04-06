@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRoles {
+  admin
+  worker
+}
+
+enum UserGender {
+  male
+  female
+}
+
+enum UserStatus {
+  widowed
+  single
+  married
+}
+
+model UserCase {
+  id     Int    @id @default(autoincrement())
+  year   Int
+  where  String
+  case   String
+  reason String
+  User   User?  @relation(fields: [userId], references: [id])
+  userId Int?
+}
+
+model UserEducationalAttainment {
+  id         Int    @id @default(autoincrement())
+  schoolname String
+  education  String
+  User       User?  @relation(fields: [userId], references: [id])
+  userId     Int?
+}
+
+model UserChildren {
+  id         Int        @id @default(autoincrement())
+  firstname  String
+  lastname   String
+  middlename String
+  birthday   DateTime
+  gender     UserGender
+
+  UserRelationship   User? @relation(fields: [userRelationshipId], references: [id])
+  userRelationshipId Int?
+}
+
+model Position {
+  id          Int     @id @default(autoincrement())
+  name        String?
+  description String
+  User        User[]
+}
+
+model Subject {
+  id          Int     @id @default(autoincrement())
+  name        String?
+  description String
+  disabled    Boolean @default(false)
+  User        User?   @relation(fields: [userId], references: [id])
+  userId      Int?
+}
+
+model User {
+  id             Int     @id @default(autoincrement())
+  profilePicture String?
+
+  firstname  String?
+  lastname   String?
+  middlename String?
+  birthday   DateTime
+  contact    String?
+  gender     UserGender?
+
+  sss      String?
+  sssimage String?
+
+  pagibig      String?
+  pagibigimage String?
+
+  tin      String?
+  tinimage String?
+
+  psn      String?
+  psnimage String?
+
+  philhealth      String?
+  philhealthimage String?
+
+  email       String    @unique
+  address     String?
+  password    String
+  role        UserRoles @default(worker)
+  description String?
+
+  status                UserStatus?
+  church                Church?                     @relation(fields: [churchId], references: [id])
+  position              Position?                   @relation(fields: [positionId], references: [id])
+  children              UserChildren[]
+  eudcationalAttainment UserEducationalAttainment[]
+  cases                 UserCase[]
+  subject               Subject[]
+
+  positionId Int?
+  churchId   Int?
+}
+
+model ChurchImage {
+  id       Int     @id @default(autoincrement())
+  image    String?
+  Church   Church? @relation(fields: [churchId], references: [id])
+  churchId Int?
+}
+
+model Church {
+  id      Int           @id @default(autoincrement())
+  images  ChurchImage[]
+  address String
+
+  latitude  Int
+  longitude Int
+  User      User[]
+}
