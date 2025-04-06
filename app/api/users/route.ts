@@ -70,16 +70,43 @@ export async function GET(request: Request) {
   }
 }
 
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
     // Validation
     if (!body.email || !body.password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
-      )
+      );
+    }
+
+    // Check if church exists if provided
+    if (body.churchId) {
+      const existingChurch = await prisma.church.findUnique({
+        where: { id: body.churchId }
+      });
+      if (!existingChurch) {
+        return NextResponse.json(
+          { error: 'Church not found' },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Check if position exists if provided
+    if (body.positionId) {
+      const existingPosition = await prisma.position.findUnique({
+        where: { id: body.positionId }
+      });
+      if (!existingPosition) {
+        return NextResponse.json(
+          { error: 'Position not found' },
+          { status: 404 }
+        );
+      }
     }
 
     const newUser = await prisma.user.create({
@@ -87,6 +114,8 @@ export async function POST(request: Request) {
         ...body,
         birthday: new Date(body.birthday),
         role: body.role || 'worker',
+        church: body.churchId ? { connect: { id: body.churchId } } : undefined,
+        position: body.positionId ? { connect: { id: body.positionId } } : undefined,
         children: body.children ? {
           createMany: { data: body.children }
         } : undefined,
@@ -101,18 +130,20 @@ export async function POST(request: Request) {
         } : undefined
       },
       include: {
+        church: true,
+        position: true,
         children: true,
         eudcationalAttainment: true,
         cases: true,
         subject: true
       }
-    })
+    });
 
-    return NextResponse.json(newUser, { status: 201 })
+    return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to create user' },
       { status: 500 }
-    )
+    );
   }
 }
