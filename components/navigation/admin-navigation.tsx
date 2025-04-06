@@ -1,4 +1,5 @@
-import type * as React from "react"
+"use client"
+import * as React from "react"
 
 import {
   Sidebar,
@@ -7,140 +8,55 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { UserSwitcher } from "../common/user-switcher"
-import { SearchForm } from "../forms/search-form"
+import { BookOpen, Briefcase, Church, LayoutDashboardIcon, Search, Users } from "lucide-react"
+import { usePathname } from "next/navigation"
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+import { Input } from "../ui/input"
 
 // This is sample data.
 const data = {
   versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
   navMain: [
     {
-      title: "Getting Started",
+      title: "IRM Worker management systems",
       url: "#",
       items: [
         {
-          title: "Installation",
-          url: "#",
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Building Your Application",
-      url: "#",
-      items: [
-        {
-          title: "Routing",
-          url: "#",
-        },
-        {
-          title: "Data Fetching",
-          url: "#",
+          title: "Dashboard",
+          url: "/page/admin",
           isActive: true,
+          icon: <LayoutDashboardIcon className="h-5 w-5" />
         },
         {
-          title: "Rendering",
-          url: "#",
+          title: "Workers",
+          url: "/page/admin/worker",
+          isActive: true,
+          icon: <Briefcase className="h-5 w-5" />
         },
         {
-          title: "Caching",
-          url: "#",
+          title: "Churches",
+          url: "/page/admin/church",
+          icon: <Church className="h-5 w-5" />,
         },
         {
-          title: "Styling",
-          url: "#",
+          title: "Subjects",
+          url: "/page/admin/subject",
+          isActive: true,
+          icon: <BookOpen className="h-5 w-5" />,
         },
         {
-          title: "Optimizing",
-          url: "#",
-        },
-        {
-          title: "Configuring",
-          url: "#",
-        },
-        {
-          title: "Testing",
-          url: "#",
-        },
-        {
-          title: "Authentication",
-          url: "#",
-        },
-        {
-          title: "Deploying",
-          url: "#",
-        },
-        {
-          title: "Upgrading",
-          url: "#",
-        },
-        {
-          title: "Examples",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "API Reference",
-      url: "#",
-      items: [
-        {
-          title: "Components",
-          url: "#",
-        },
-        {
-          title: "File Conventions",
-          url: "#",
-        },
-        {
-          title: "Functions",
-          url: "#",
-        },
-        {
-          title: "next.config.js Options",
-          url: "#",
-        },
-        {
-          title: "CLI",
-          url: "#",
-        },
-        {
-          title: "Edge Runtime",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Architecture",
-      url: "#",
-      items: [
-        {
-          title: "Accessibility",
-          url: "#",
-        },
-        {
-          title: "Fast Refresh",
-          url: "#",
-        },
-        {
-          title: "Next.js Compiler",
-          url: "#",
-        },
-        {
-          title: "Supported Browsers",
-          url: "#",
-        },
-        {
-          title: "Turbopack",
-          url: "#",
+          title: "Accounts",
+          url: "/page/admin/account",
+          isActive: true,
+          icon: <Users className="h-5 w-5" />,
         },
       ],
     },
@@ -148,22 +64,53 @@ const data = {
 }
 
 export function AdminNavigation({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
+  const [searchQuery, setSearchQuery] = React.useState("")
+
+  const filteredNavItems = data.navMain.map((mainItem) => ({
+    ...mainItem,
+    items: mainItem.items.filter((item) =>
+      item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+  })).filter((mainItem) => mainItem.items.length > 0) // filter out empty groups
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
         <UserSwitcher />
-        <SearchForm />
+        <div className="p-1">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search navigation..."
+              className="w-full pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
       </SidebarHeader>
       <SidebarContent>
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
+        {filteredNavItems.map((group) => (
+          <SidebarGroup key={group.title}>
+            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {item.items.map((item) => (
+                {group.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={item.isActive}>
-                      <a href={item.url}>{item.title}</a>
+                    <SidebarMenuButton
+                      className={cn(
+                        pathname === item.url
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-muted"
+                      )}
+                      asChild
+                    >
+                      <Link href={item.url}>
+                        {item.icon}
+                        {item.title}
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -176,4 +123,3 @@ export function AdminNavigation({ ...props }: React.ComponentProps<typeof Sideba
     </Sidebar>
   )
 }
-
