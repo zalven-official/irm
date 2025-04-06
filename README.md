@@ -18,6 +18,6 @@
 - ✅  if not logged in the just go directly to /page/public
 
 
-- Navigation for admin
+- ✅ Navigation for admin
 - footer for all
 - 

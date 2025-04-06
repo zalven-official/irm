@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -20,6 +21,7 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Input } from "../ui/input"
+import { Label } from "@radix-ui/react-dropdown-menu"
 
 // This is sample data.
 const data = {
@@ -120,6 +122,12 @@ export function AdminNavigation({ ...props }: React.ComponentProps<typeof Sideba
         ))}
       </SidebarContent>
       <SidebarRail />
+      <SidebarFooter className="bg-primary text-secondary text-xs p-1 text-center">
+        <Label >
+          IRM Ministries © Lands horizon INC. 2024
+        </Label>
+      </SidebarFooter>
+
     </Sidebar>
   )
 }
