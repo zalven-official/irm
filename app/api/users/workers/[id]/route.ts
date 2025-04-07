@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// GET single worker
+// GET single worker with cases
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const user = await prisma.user.findUnique({
@@ -30,7 +30,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-// UPDATE worker
+// UPDATE worker with cases
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
@@ -44,12 +44,22 @@ export async function PUT(request: Request, { params }: { params: { id: string }
           create: body.subjects?.map((subjectId: number) => ({
             subject: { connect: { id: subjectId } }
           }))
+        },
+        cases: {
+          deleteMany: { userId: parseInt(params.id) },
+          create: body.cases?.map((c: any) => ({
+            year: c.year,
+            where: c.where,
+            case: c.case,
+            reason: c.reason
+          }))
         }
       },
       include: {
         church: true,
         position: true,
-        userSubjects: true
+        userSubjects: true,
+        cases: true
       }
     })
 
@@ -62,16 +72,19 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-// DELETE worker
+// DELETE worker with cases
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-
-
   try {
+    // Delete related cases first
+    await prisma.userCase.deleteMany({
+      where: { userId: parseInt(params.id) }
+    })
+
     await prisma.user.delete({
       where: { id: parseInt(params.id) }
     })
 
-    return NextResponse.json({ message: 'Worker deleted successfully' })
+    return NextResponse.json({ message: 'Worker and associated cases deleted successfully' })
   } catch (error) {
     return NextResponse.json(
       { message: 'Error deleting worker', error: error instanceof Error ? error.message : 'Unknown error' },

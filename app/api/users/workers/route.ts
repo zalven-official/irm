@@ -80,12 +80,8 @@ export async function GET(request: Request) {
       { status: 500 }
     )
   }
-}
-
-export async function POST(request: Request) {
+} export async function POST(request: Request) {
   try {
-
-
     const body = await request.json()
     const hashedPassword = await argon2d.hash(body.password)
 
@@ -98,12 +94,21 @@ export async function POST(request: Request) {
           create: body.subjects?.map((subjectId: number) => ({
             subject: { connect: { id: subjectId } }
           }))
+        },
+        cases: {
+          create: body.cases?.map((c: any) => ({
+            year: c.year,
+            where: c.where,
+            case: c.case,
+            reason: c.reason
+          }))
         }
       },
       include: {
         church: true,
         position: true,
-        userSubjects: true
+        userSubjects: true,
+        cases: true  // Include cases in the response
       }
     })
 
