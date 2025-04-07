@@ -5,6 +5,7 @@ import { DataTable } from "@/components/data-table"
 import { usePositionStore } from "@/store/position-store"
 import { Briefcase } from "lucide-react"
 import { useEffect, useState } from "react"
+import { CreatePosition } from "@/components/positions/create"
 
 export default function PositionsPage() {
 
@@ -45,7 +46,7 @@ export default function PositionsPage() {
         <h1 className="text-2xl font-bold">Positions for Ministers</h1>
       </div>
       <p>Manage and assign ministerial positions within our church community here.</p>
-
+      <CreatePosition />
       <DataTable
         columns={columns}
         data={positions.map(position => ({ disabled: false, ...position }))}

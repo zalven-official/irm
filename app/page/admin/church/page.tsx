@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useChurchStore } from "@/store/church-store"
 import { DataTable } from "@/components/data-table"
 import { columns } from "@/components/churches/columns"
+import { CreateChurch } from "@/components/churches/create"
 
 export default function ChurchPage() {
   const { church, fetchchurch, total, page, pageSize, totalPages } = useChurchStore()
@@ -41,7 +42,9 @@ export default function ChurchPage() {
           <h1 className="text-2xl font-bold">Church Management</h1>
         </div>
       </div>
+      <p>Manage churches and their addresses community.</p>
 
+      <CreateChurch />
       <DataTable
         columns={columns}
         data={church}

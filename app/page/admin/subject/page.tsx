@@ -4,7 +4,8 @@ import { SubjectQueryType } from "@/validator/schema"
 import { BookOpen } from "lucide-react"
 import { useEffect, useState } from "react"
 import { DataTable } from "@/components/data-table"
-import { columns } from "@/components/columns"
+import { columns } from "@/components/subject/columns"
+import { CreateSubject } from "@/components/subject/create"
 
 
 export default function SubjectPage() {
@@ -44,7 +45,7 @@ export default function SubjectPage() {
         <h1 className="text-2xl font-bold">Subject Management</h1>
       </div>
       <p>Manage subjects and topics here.</p>
-
+      <CreateSubject />
       <DataTable
         columns={columns}
         data={subjects}

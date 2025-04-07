@@ -1,5 +1,6 @@
 "use client"
 import { columns } from "@/components/accounts/columns"
+import { CreateAccount } from "@/components/accounts/create"
 import { DataTable } from "@/components/data-table"
 import { useAdminStore } from "@/store/admin-store"
 import { PlusIcon, TableIcon, Users } from "lucide-react"
@@ -53,6 +54,7 @@ export default function AccountPage() {
         <h1 className="text-2xl font-bold">Accounts Management</h1>
       </div>
       <p>Manage user accounts here.</p>
+      <CreateAccount />
       <DataTable
         columns={columns}
         data={admins}
