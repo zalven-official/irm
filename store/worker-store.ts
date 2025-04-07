@@ -65,7 +65,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
         page: number;
         pageSize: number;
         totalPages: number;
-      }>(`/users/worker?${params.toString()}`);
+      }>(`/users/workers?${params.toString()}`);
 
       set({
         workers: response.data.data,
@@ -85,7 +85,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
   getWorkerById: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get<WorkerResponseType>(`/users/worker/${id}`);
+      const response = await api.get<WorkerResponseType>(`/users/workers/${id}`);
       set({ currentWorker: response.data });
     } catch (err) {
       set({ error: (err as Error).message });
@@ -98,7 +98,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
   createWorker: async (workerData) => {
     set({ isCreating: true, error: null });
     try {
-      const response = await api.post<WorkerResponseType>('/users/worker', workerData);
+      const response = await api.post<WorkerResponseType>('/users/workers', workerData);
       set((state) => ({
         workers: [...state.workers, response.data],
         currentWorker: response.data,
@@ -115,7 +115,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
   updateWorker: async (id, workerData) => {
     set({ isUpdating: true, error: null });
     try {
-      const response = await api.put<WorkerResponseType>(`/users/worker/${id}`, workerData);
+      const response = await api.put<WorkerResponseType>(`/users/workers/${id}`, workerData);
       set((state) => ({
         workers: state.workers.map((worker) =>
           worker.id === id ? response.data : worker
@@ -133,7 +133,7 @@ export const useWorkerStore = create<WorkerState>((set, get) => ({
   deleteWorker: async (id) => {
     set({ isDeleting: true, error: null });
     try {
-      await api.delete(`/users/worker/${id}`);
+      await api.delete(`/users/workers/${id}`);
       set((state) => ({
         workers: state.workers.filter((worker) => worker.id !== id),
         currentWorker: null,

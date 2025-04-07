@@ -7,6 +7,7 @@ export const columns: ColumnDef<ChurchResponseType>[] = [
   {
     accessorKey: "address",
     header: ({ column }) => {
+
       return (
         <Button
           variant="ghost"

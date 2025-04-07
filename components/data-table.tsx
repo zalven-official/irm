@@ -70,13 +70,13 @@ export function DataTable<TData>({
   // Update filters for one or multiple columns when searching
   const handleSearch = (value: string) => {
     setSearchQuery(value)
-    if (Array.isArray(column)) {
-      column.forEach(col => {
-        table.getColumn(col)?.setFilterValue(value)
-      })
-    } else {
-      table.getColumn(column)?.setFilterValue(value)
-    }
+
+    const columnsToFilter = Array.isArray(column) ? column : [column]
+
+    columnsToFilter.forEach(col => {
+      table.getColumn(col)?.setFilterValue(value)
+    })
+
     onSearch(value)
   }
 
