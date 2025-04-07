@@ -18,7 +18,7 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-8">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Login</h2>
+        <h2 className="text-2xl font-bold">IRM Login</h2>
         <p className="text-gray-500 mt-2">Sign in to your account</p>
       </div>
 
