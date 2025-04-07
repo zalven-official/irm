@@ -1,5 +1,4 @@
 "use client"
-import { AdminSignupForm } from "@/components/forms/account/user-admin-form"
 import { Button } from "@/components/ui/button"
 import { PlusIcon, TableIcon, Users } from "lucide-react"
 
@@ -13,7 +12,7 @@ export default function AccountPage() {
       </div>
       <p>Manage user accounts here.</p>
       <div className="flex  justify-end items-end w-full space-x-2">
-        <AdminSignupForm />
+        helo
       </div>
     </div>
   )

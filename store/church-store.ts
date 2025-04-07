@@ -9,7 +9,7 @@ import {
 import api from '@/lib/api';
 
 interface ChurchState {
-  churches: ChurchResponseType[];
+  church: ChurchResponseType[];
   currentChurch: ChurchResponseType | null;
   isLoading: boolean;
   isCreating: boolean;
@@ -22,7 +22,7 @@ interface ChurchState {
   totalPages: number;
 
   // Paginated fetch
-  fetchChurches: (query?: ChurchQueryType) => Promise<void>;
+  fetchchurch: (query?: ChurchQueryType) => Promise<void>;
 
   // Single church actions
   getChurchById: (id: number) => Promise<void>;
@@ -35,7 +35,7 @@ interface ChurchState {
 }
 
 export const useChurchStore = create<ChurchState>((set, get) => ({
-  churches: [],
+  church: [],
   currentChurch: null,
   isLoading: false,
   isCreating: false,
@@ -47,7 +47,7 @@ export const useChurchStore = create<ChurchState>((set, get) => ({
   pageSize: 10,
   totalPages: 0,
 
-  fetchChurches: async (query = {
+  fetchchurch: async (query = {
     page: 0,
     pageSize: 0
   }) => {
@@ -59,11 +59,11 @@ export const useChurchStore = create<ChurchState>((set, get) => ({
       });
 
       const response = await api.get<ChurchPaginatedResponseType>(
-        `/churches?${params.toString()}`
+        `/church?${params.toString()}`
       );
 
       set({
-        churches: response.data.data,
+        church: response.data.data,
         total: response.data.total,
         page: response.data.page,
         pageSize: response.data.pageSize,
@@ -80,7 +80,7 @@ export const useChurchStore = create<ChurchState>((set, get) => ({
   getChurchById: async (id: number) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get<ChurchResponseType>(`/churches/${id}`);
+      const response = await api.get<ChurchResponseType>(`/church/${id}`);
       set({ currentChurch: response.data });
     } catch (err) {
       set({ error: (err as Error).message });
@@ -93,9 +93,9 @@ export const useChurchStore = create<ChurchState>((set, get) => ({
   createChurch: async (churchData) => {
     set({ isCreating: true, error: null });
     try {
-      const response = await api.post<ChurchResponseType>('/churches', churchData);
+      const response = await api.post<ChurchResponseType>('/church', churchData);
       set((state) => ({
-        churches: [...state.churches, response.data],
+        church: [...state.church, response.data],
         currentChurch: response.data,
       }));
       return response.data;
@@ -110,9 +110,9 @@ export const useChurchStore = create<ChurchState>((set, get) => ({
   updateChurch: async (id, churchData) => {
     set({ isUpdating: true, error: null });
     try {
-      const response = await api.put<ChurchResponseType>(`/churches/${id}`, churchData);
+      const response = await api.put<ChurchResponseType>(`/church/${id}`, churchData);
       set((state) => ({
-        churches: state.churches.map((church) =>
+        church: state.church.map((church) =>
           church.id === id ? response.data : church
         ),
         currentChurch: response.data,
@@ -128,9 +128,9 @@ export const useChurchStore = create<ChurchState>((set, get) => ({
   deleteChurch: async (id) => {
     set({ isDeleting: true, error: null });
     try {
-      await api.delete(`/churches/${id}`);
+      await api.delete(`/church/${id}`);
       set((state) => ({
-        churches: state.churches.filter((church) => church.id !== id),
+        church: state.church.filter((church) => church.id !== id),
         currentChurch: null,
       }));
     } catch (err) {
@@ -143,7 +143,7 @@ export const useChurchStore = create<ChurchState>((set, get) => ({
 
   resetChurchState: () => {
     set({
-      churches: [],
+      church: [],
       currentChurch: null,
       isLoading: false,
       isCreating: false,

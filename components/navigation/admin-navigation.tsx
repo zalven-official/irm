@@ -16,7 +16,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { UserSwitcher } from "../common/user-switcher"
-import { BookOpen, Briefcase, Church, LayoutDashboardIcon, Search, Users } from "lucide-react"
+import { BookOpen, Briefcase, Church, HardHatIcon, LayoutDashboardIcon, Search, Users } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -47,6 +47,12 @@ const data = {
           title: "Churches",
           url: "/page/admin/church",
           icon: <Church className="h-5 w-5" />,
+        },
+        {
+          title: "Positions",
+          url: "/page/admin/position",
+          isActive: true,
+          icon: <HardHatIcon className="h-5 w-5" />,
         },
         {
           title: "Subjects",

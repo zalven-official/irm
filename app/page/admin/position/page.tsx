@@ -1,60 +1,62 @@
 "use client"
-import { useSubjectStore } from "@/store/subject-store"
-import { SubjectQueryType } from "@/validator/schema"
-import { BookOpen } from "lucide-react"
-import { useEffect, useState } from "react"
+
+import { columns } from "@/components/positions/columns"
 import { DataTable } from "@/components/data-table"
-import { columns } from "@/components/columns"
+import { usePositionStore } from "@/store/position-store"
+import { Briefcase } from "lucide-react"
+import { useEffect, useState } from "react"
 
+export default function PositionsPage() {
 
-export default function SubjectPage() {
-  const { subjects, fetchSubjects, total, page, pageSize, totalPages } = useSubjectStore()
+  const { positions, fetchPositions, total, page, pageSize, totalPages } = usePositionStore()
   const [searchQuery, setSearchQuery] = useState("")
+
   useEffect(() => {
-    fetchSubjects({
+    fetchPositions({
       page: 1,
       pageSize: 10,
-      includeUsers: false
+      includeUsers: true,
     })
-  }, [fetchSubjects])
+  }, [fetchPositions])
 
   const handlePaginationChange = (newPage: number, newPageSize: number) => {
-    fetchSubjects({
+    fetchPositions({
       page: newPage,
       pageSize: newPageSize,
       name: searchQuery || undefined,
-      includeUsers: false
+      includeUsers: true,
     })
   }
 
   const handleSearch = (value: string) => {
     setSearchQuery(value)
-    fetchSubjects({
+    fetchPositions({
       page: 1,
       pageSize: 10,
       name: value || undefined,
-      includeUsers: false
+      includeUsers: true,
     })
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <BookOpen className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Subject Management</h1>
+        <Briefcase className="h-6 w-6" />
+        <h1 className="text-2xl font-bold">Positions for Ministers</h1>
       </div>
-      <p>Manage subjects and topics here.</p>
+      <p>Manage and assign ministerial positions within our church community here.</p>
 
       <DataTable
         columns={columns}
-        data={subjects}
+        data={positions.map(position => ({ disabled: false, ...position }))}
         onPaginationChange={handlePaginationChange}
         totalPages={totalPages}
         currentPage={page}
         pageSize={pageSize}
+        total={total}
         onSearch={handleSearch}
+        column="address"
       />
     </div>
   )
 }
-

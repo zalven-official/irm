@@ -1,5 +1,5 @@
 "use client"
-import WorkerSignupForm from "@/components/forms/account/user-worker-form"
+
 import { Briefcase } from "lucide-react"
 
 
@@ -12,7 +12,7 @@ export default function WorkerPage() {
       </div>
       <p>Manage workers and assignments here.</p>
       <div className="flex justify-end items-end w-full space-x-2">
-        <WorkerSignupForm />
+        workers
       </div>
     </div>
   )
