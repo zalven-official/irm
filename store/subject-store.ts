@@ -1,167 +1,163 @@
-// stores/subjectStore.ts
-import { create } from 'zustand'
-import { Subject, User } from '@prisma/client'
+import { create } from 'zustand';
+import {
+  type SubjectCreateType,
+  type SubjectUpdateType,
+  type SubjectResponseType,
+  type SubjectPaginatedResponseType,
+  type SubjectQueryType,
+} from '@/validator/schema';
+import api from '@/lib/api';
 
 interface SubjectState {
-  subjects: (Subject & { User: User | null })[]
-  currentSubject: (Subject & { User: User | null }) | null
-  loading: boolean
-  error: string | null
-  total: number
-  filters: {
-    name?: string
-    description?: string
-    disabled?: boolean
-    userId?: number
-  }
+  subjects: SubjectResponseType[];
+  currentSubject: SubjectResponseType | null;
+  isLoading: boolean;
+  isCreating: boolean;
+  isUpdating: boolean;
+  isDeleting: boolean;
+  error: string | null;
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 
-  // Actions
-  fetchSubjects: () => Promise<void>
-  getSubjectById: (id: number) => Promise<void>
-  createSubject: (subjectData: {
-    name?: string
-    description: string
-    disabled?: boolean
-    userId?: number
-  }) => Promise<void>
-  updateSubject: (
-    id: number,
-    subjectData: {
-      name?: string
-      description?: string
-      disabled?: boolean
-      userId?: number | null
-    }
-  ) => Promise<void>
-  deleteSubject: (id: number) => Promise<void>
-  setFilters: (filters: {
-    name?: string
-    description?: string
-    disabled?: boolean
-    userId?: number
-  }) => void
-  resetFilters: () => void
-  resetState: () => void
+  // Paginated fetch
+  fetchSubjects: (query?: SubjectQueryType) => Promise<void>;
+
+  // Single subject actions
+  getSubjectById: (id: number) => Promise<void>;
+  createSubject: (subjectData: SubjectCreateType) => Promise<SubjectResponseType>;
+  updateSubject: (id: number, subjectData: SubjectUpdateType) => Promise<void>;
+  deleteSubject: (id: number) => Promise<void>;
+
+  // State management
+  resetSubjectState: () => void;
 }
 
-const useSubjectStore = create<SubjectState>((set, get) => ({
+export const useSubjectStore = create<SubjectState>((set, get) => ({
   subjects: [],
   currentSubject: null,
-  loading: false,
+  isLoading: false,
+  isCreating: false,
+  isUpdating: false,
+  isDeleting: false,
   error: null,
   total: 0,
-  filters: {},
+  page: 1,
+  pageSize: 10,
+  totalPages: 0,
 
-  fetchSubjects: async () => {
-    set({ loading: true, error: null })
+  fetchSubjects: async (query = {
+    page: 0,
+    pageSize: 0,
+    includeUsers: false
+  }) => {
+    set({ isLoading: true, error: null });
     try {
-      const { filters } = get()
-      const queryParams = new URLSearchParams({
-        ...(filters.name && { name: filters.name }),
-        ...(filters.description && { description: filters.description }),
-        ...(filters.disabled !== undefined && { disabled: String(filters.disabled) }),
-        ...(filters.userId && { userId: String(filters.userId) }),
-      })
+      const params = new URLSearchParams();
+      const { includeUsers, ...restQuery } = query;
 
-      const response = await fetch(`/api/subjects?${queryParams}`)
-      if (!response.ok) throw new Error('Failed to fetch subjects')
+      Object.entries(restQuery).forEach(([key, value]) => {
+        if (value !== undefined) params.append(key, String(value));
+      });
+      if (includeUsers) params.append('includeUsers', 'true');
 
-      const { data, total } = await response.json()
+      const response = await api.get<SubjectPaginatedResponseType>(
+        `/subjects?${params.toString()}`
+      );
+
       set({
-        subjects: data,
-        total,
-        loading: false
-      })
+        subjects: response.data.data,
+        total: response.data.total,
+        page: response.data.page,
+        pageSize: response.data.pageSize,
+        totalPages: response.data.totalPages,
+      });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to fetch subjects', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   getSubjectById: async (id: number) => {
-    set({ loading: true, error: null })
+    set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`/api/subjects/${id}`)
-      if (!response.ok) throw new Error('Failed to fetch subject')
-      const subject = await response.json()
-      set({ currentSubject: subject, loading: false })
+      const response = await api.get<SubjectResponseType>(`/subjects/${id}`);
+      set({ currentSubject: response.data });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to fetch subject', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   createSubject: async (subjectData) => {
-    set({ loading: true, error: null })
+    set({ isCreating: true, error: null });
     try {
-      const response = await fetch('/api/subjects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subjectData)
-      })
-
-      if (!response.ok) throw new Error('Failed to create subject')
-
-      const newSubject = await response.json()
-      set(state => ({
-        subjects: [...state.subjects, newSubject],
-        total: state.total + 1,
-        loading: false
-      }))
+      const response = await api.post<SubjectResponseType>('/subjects', subjectData);
+      set((state) => ({
+        subjects: [...state.subjects, response.data],
+        currentSubject: response.data,
+      }));
+      return response.data;
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to create subject', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isCreating: false });
     }
   },
 
   updateSubject: async (id, subjectData) => {
-    set({ loading: true, error: null })
+    set({ isUpdating: true, error: null });
     try {
-      const response = await fetch(`/api/subjects/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subjectData)
-      })
-
-      if (!response.ok) throw new Error('Failed to update subject')
-
-      const updatedSubject = await response.json()
-      set(state => ({
-        subjects: state.subjects.map(subject =>
-          subject.id === id ? updatedSubject : subject
+      const response = await api.put<SubjectResponseType>(`/subjects/${id}`, subjectData);
+      set((state) => ({
+        subjects: state.subjects.map((subject) =>
+          subject.id === id ? response.data : subject
         ),
-        currentSubject: updatedSubject,
-        loading: false
-      }))
+        currentSubject: response.data,
+      }));
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to update subject', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isUpdating: false });
     }
   },
 
   deleteSubject: async (id) => {
-    set({ loading: true, error: null })
+    set({ isDeleting: true, error: null });
     try {
-      const response = await fetch(`/api/subjects/${id}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Failed to delete subject')
-
-      set(state => ({
-        subjects: state.subjects.filter(subject => subject.id !== id),
-        total: state.total - 1,
+      await api.delete(`/subjects/${id}`);
+      set((state) => ({
+        subjects: state.subjects.filter((subject) => subject.id !== id),
         currentSubject: null,
-        loading: false
-      }))
+      }));
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to delete subject', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isDeleting: false });
     }
   },
 
-  setFilters: (filters) => set({ filters }),
-  resetFilters: () => set({ filters: {} }),
-  resetState: () => set({
-    subjects: [],
-    currentSubject: null,
-    loading: false,
-    error: null,
-    total: 0,
-    filters: {}
-  })
-}))
-
-export default useSubjectStore
+  resetSubjectState: () => {
+    set({
+      subjects: [],
+      currentSubject: null,
+      isLoading: false,
+      isCreating: false,
+      isUpdating: false,
+      isDeleting: false,
+      error: null,
+      total: 0,
+      page: 1,
+      pageSize: 10,
+      totalPages: 0,
+    });
+  },
+}));

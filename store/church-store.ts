@@ -1,176 +1,159 @@
-// stores/churchStore.ts
-import { create } from 'zustand'
-import { Church, ChurchImage } from '@prisma/client'
+import { create } from 'zustand';
+import {
+  type ChurchCreateType,
+  type ChurchUpdateType,
+  type ChurchResponseType,
+  type ChurchPaginatedResponseType,
+  type ChurchQueryType,
+} from '@/validator/schema';
+import api from '@/lib/api';
 
 interface ChurchState {
-  churches: (Church & { images: ChurchImage[] })[]
-  currentChurch: (Church & { images: ChurchImage[] }) | null
-  loading: boolean
-  error: string | null
-  currentPage: number
-  totalPages: number
-  filters: {
-    address?: string
-    latitudeFrom?: number
-    latitudeTo?: number
-    longitudeFrom?: number
-    longitudeTo?: number
-  }
+  churches: ChurchResponseType[];
+  currentChurch: ChurchResponseType | null;
+  isLoading: boolean;
+  isCreating: boolean;
+  isUpdating: boolean;
+  isDeleting: boolean;
+  error: string | null;
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 
-  // Actions
-  fetchChurches: (page?: number, limit?: number) => Promise<void>
-  getChurchById: (id: number) => Promise<void>
-  createChurch: (churchData: {
-    address: string
-    latitude: number
-    longitude: number
-    images?: string[]
-  }) => Promise<void>
-  updateChurch: (
-    id: number,
-    churchData: {
-      address?: string
-      latitude?: number
-      longitude?: number
-      images?: string[]
-    }
-  ) => Promise<void>
-  deleteChurch: (id: number) => Promise<void>
-  setCurrentChurch: (church: (Church & { images: ChurchImage[] }) | null) => void
-  setFilters: (filters: {
-    address?: string
-    latitudeFrom?: number
-    latitudeTo?: number
-    longitudeFrom?: number
-    longitudeTo?: number
-  }) => void
-  resetFilters: () => void
-  resetState: () => void
+  // Paginated fetch
+  fetchChurches: (query?: ChurchQueryType) => Promise<void>;
+
+  // Single church actions
+  getChurchById: (id: number) => Promise<void>;
+  createChurch: (churchData: ChurchCreateType) => Promise<ChurchResponseType>;
+  updateChurch: (id: number, churchData: ChurchUpdateType) => Promise<void>;
+  deleteChurch: (id: number) => Promise<void>;
+
+  // State management
+  resetChurchState: () => void;
 }
 
-const useChurchStore = create<ChurchState>((set, get) => ({
+export const useChurchStore = create<ChurchState>((set, get) => ({
   churches: [],
   currentChurch: null,
-  loading: false,
+  isLoading: false,
+  isCreating: false,
+  isUpdating: false,
+  isDeleting: false,
   error: null,
-  currentPage: 1,
-  totalPages: 1,
-  filters: {},
+  total: 0,
+  page: 1,
+  pageSize: 10,
+  totalPages: 0,
 
-  fetchChurches: async (page = 1, limit = 10) => {
-    set({ loading: true, error: null })
+  fetchChurches: async (query = {
+    page: 0,
+    pageSize: 0
+  }) => {
+    set({ isLoading: true, error: null });
     try {
-      const { filters } = get()
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(filters.address && { address: filters.address }),
-        ...(filters.latitudeFrom && { latitudeFrom: filters.latitudeFrom.toString() }),
-        ...(filters.latitudeTo && { latitudeTo: filters.latitudeTo.toString() }),
-        ...(filters.longitudeFrom && { longitudeFrom: filters.longitudeFrom.toString() }),
-        ...(filters.longitudeTo && { longitudeTo: filters.longitudeTo.toString() }),
-      })
+      const params = new URLSearchParams();
+      Object.entries(query).forEach(([key, value]) => {
+        if (value !== undefined) params.append(key, String(value));
+      });
 
-      const response = await fetch(`/api/churches?${queryParams}`)
-      if (!response.ok) throw new Error('Failed to fetch churches')
+      const response = await api.get<ChurchPaginatedResponseType>(
+        `/churches?${params.toString()}`
+      );
 
-      const { data, pagination } = await response.json()
       set({
-        churches: data,
-        currentPage: pagination.page,
-        totalPages: pagination.totalPages,
-        loading: false
-      })
+        churches: response.data.data,
+        total: response.data.total,
+        page: response.data.page,
+        pageSize: response.data.pageSize,
+        totalPages: response.data.totalPages,
+      });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to fetch churches', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   getChurchById: async (id: number) => {
-    set({ loading: true, error: null })
+    set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`/api/churches/${id}`)
-      if (!response.ok) throw new Error('Failed to fetch church')
-      const church = await response.json()
-      set({ currentChurch: church, loading: false })
+      const response = await api.get<ChurchResponseType>(`/churches/${id}`);
+      set({ currentChurch: response.data });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to fetch church', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   createChurch: async (churchData) => {
-    set({ loading: true, error: null })
+    set({ isCreating: true, error: null });
     try {
-      const response = await fetch('/api/churches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(churchData)
-      })
-
-      if (!response.ok) throw new Error('Failed to create church')
-
-      const newChurch = await response.json()
-      set(state => ({
-        churches: [...state.churches, newChurch],
-        loading: false
-      }))
+      const response = await api.post<ChurchResponseType>('/churches', churchData);
+      set((state) => ({
+        churches: [...state.churches, response.data],
+        currentChurch: response.data,
+      }));
+      return response.data;
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to create church', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isCreating: false });
     }
   },
 
   updateChurch: async (id, churchData) => {
-    set({ loading: true, error: null })
+    set({ isUpdating: true, error: null });
     try {
-      const response = await fetch(`/api/churches/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(churchData)
-      })
-
-      if (!response.ok) throw new Error('Failed to update church')
-
-      const updatedChurch = await response.json()
-      set(state => ({
-        churches: state.churches.map(church =>
-          church.id === id ? updatedChurch : church
+      const response = await api.put<ChurchResponseType>(`/churches/${id}`, churchData);
+      set((state) => ({
+        churches: state.churches.map((church) =>
+          church.id === id ? response.data : church
         ),
-        currentChurch: updatedChurch,
-        loading: false
-      }))
+        currentChurch: response.data,
+      }));
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to update church', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isUpdating: false });
     }
   },
 
   deleteChurch: async (id) => {
-    set({ loading: true, error: null })
+    set({ isDeleting: true, error: null });
     try {
-      const response = await fetch(`/api/churches/${id}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Failed to delete church')
-
-      set(state => ({
-        churches: state.churches.filter(church => church.id !== id),
+      await api.delete(`/churches/${id}`);
+      set((state) => ({
+        churches: state.churches.filter((church) => church.id !== id),
         currentChurch: null,
-        loading: false
-      }))
+      }));
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to delete church', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isDeleting: false });
     }
   },
 
-  setCurrentChurch: (church) => set({ currentChurch: church }),
-  setFilters: (filters) => set({ filters }),
-  resetFilters: () => set({ filters: {} }),
-  resetState: () => set({
-    churches: [],
-    currentChurch: null,
-    loading: false,
-    error: null,
-    currentPage: 1,
-    totalPages: 1,
-    filters: {}
-  })
-}))
-
-export default useChurchStore
+  resetChurchState: () => {
+    set({
+      churches: [],
+      currentChurch: null,
+      isLoading: false,
+      isCreating: false,
+      isUpdating: false,
+      isDeleting: false,
+      error: null,
+      total: 0,
+      page: 1,
+      pageSize: 10,
+      totalPages: 0,
+    });
+  },
+}));

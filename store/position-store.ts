@@ -1,169 +1,164 @@
-// stores/positionStore.ts
-import { create } from 'zustand'
-import { Position, User } from '@prisma/client'
+import { create } from 'zustand';
+import {
+  type PositionCreateType,
+  type PositionUpdateType,
+  type PositionResponseType,
+  type PositionPaginatedResponseType,
+  type PositionQueryType,
+} from '@/validator/schema';
+import api from '@/lib/api';
 
 interface PositionState {
-  positions: (Position & { User: User[] })[]
-  currentPosition: (Position & { User: User[] }) | null
-  loading: boolean
-  error: string | null
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
-  filters: {
-    name?: string
-    description?: string
-    sortBy?: string
-    sortOrder?: 'asc' | 'desc'
-  }
+  positions: PositionResponseType[];
+  currentPosition: PositionResponseType | null;
+  isLoading: boolean;
+  isCreating: boolean;
+  isUpdating: boolean;
+  isDeleting: boolean;
+  error: string | null;
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 
-  // Actions
-  fetchPositions: (page?: number, limit?: number) => Promise<void>
-  getPositionById: (id: number) => Promise<void>
-  createPosition: (positionData: { name?: string; description: string }) => Promise<void>
-  updatePosition: (id: number, positionData: { name?: string; description?: string }) => Promise<void>
-  deletePosition: (id: number) => Promise<void>
-  setFilters: (filters: {
-    name?: string
-    description?: string
-    sortBy?: string
-    sortOrder?: 'asc' | 'desc'
-  }) => void
-  resetFilters: () => void
-  resetState: () => void
+  // Paginated fetch
+  fetchPositions: (query?: PositionQueryType) => Promise<void>;
+
+  // Single position actions
+  getPositionById: (id: number) => Promise<void>;
+  createPosition: (positionData: PositionCreateType) => Promise<PositionResponseType>;
+  updatePosition: (id: number, positionData: PositionUpdateType) => Promise<void>;
+  deletePosition: (id: number) => Promise<void>;
+
+  // State management
+  resetPositionState: () => void;
 }
 
-const usePositionStore = create<PositionState>((set, get) => ({
+export const usePositionStore = create<PositionState>((set, get) => ({
   positions: [],
   currentPosition: null,
-  loading: false,
+  isLoading: false,
+  isCreating: false,
+  isUpdating: false,
+  isDeleting: false,
   error: null,
-  pagination: {
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 1
-  },
-  filters: {},
+  total: 0,
+  page: 1,
+  pageSize: 10,
+  totalPages: 0,
 
-  fetchPositions: async (page = 1, limit = 10) => {
-    set({ loading: true, error: null })
+  fetchPositions: async (query = {
+    page: 0,
+    pageSize: 0,
+    includeUsers: false
+  }) => {
+    set({ isLoading: true, error: null });
     try {
-      const { filters } = get()
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(filters.name && { name: filters.name }),
-        ...(filters.description && { description: filters.description }),
-        ...(filters.sortBy && { sortBy: filters.sortBy }),
-        ...(filters.sortOrder && { sortOrder: filters.sortOrder }),
-      })
+      const params = new URLSearchParams();
+      const { includeUsers, ...restQuery } = query;
 
-      const response = await fetch(`/api/positions?${queryParams}`)
-      if (!response.ok) throw new Error('Failed to fetch positions')
+      // Convert query object to URL params
+      Object.entries(restQuery).forEach(([key, value]) => {
+        if (value !== undefined) params.append(key, String(value));
+      });
+      if (includeUsers) params.append('includeUsers', 'true');
 
-      const { data, pagination } = await response.json()
+      const response = await api.get<PositionPaginatedResponseType>(
+        `/positions?${params.toString()}`
+      );
+
       set({
-        positions: data,
-        pagination,
-        loading: false
-      })
+        positions: response.data.data,
+        total: response.data.total,
+        page: response.data.page,
+        pageSize: response.data.pageSize,
+        totalPages: response.data.totalPages,
+      });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to fetch positions', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   getPositionById: async (id: number) => {
-    set({ loading: true, error: null })
+    set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`/api/positions/${id}`)
-      if (!response.ok) throw new Error('Failed to fetch position')
-      const position = await response.json()
-      set({ currentPosition: position, loading: false })
+      const response = await api.get<PositionResponseType>(`/positions/${id}`);
+      set({ currentPosition: response.data });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to fetch position', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   createPosition: async (positionData) => {
-    set({ loading: true, error: null })
+    set({ isCreating: true, error: null });
     try {
-      const response = await fetch('/api/positions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(positionData)
-      })
-
-      if (!response.ok) throw new Error('Failed to create position')
-
-      const newPosition = await response.json()
-      set(state => ({
-        positions: [...state.positions, newPosition],
-        loading: false
-      }))
+      const response = await api.post<PositionResponseType>('/positions', positionData);
+      set((state) => ({
+        positions: [...state.positions, response.data],
+        currentPosition: response.data,
+      }));
+      return response.data;
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to create position', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isCreating: false });
     }
   },
 
   updatePosition: async (id, positionData) => {
-    set({ loading: true, error: null })
+    set({ isUpdating: true, error: null });
     try {
-      const response = await fetch(`/api/positions/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(positionData)
-      })
-
-      if (!response.ok) throw new Error('Failed to update position')
-
-      const updatedPosition = await response.json()
-      set(state => ({
-        positions: state.positions.map(position =>
-          position.id === id ? updatedPosition : position
+      const response = await api.put<PositionResponseType>(`/positions/${id}`, positionData);
+      set((state) => ({
+        positions: state.positions.map((position) =>
+          position.id === id ? response.data : position
         ),
-        currentPosition: updatedPosition,
-        loading: false
-      }))
+        currentPosition: response.data,
+      }));
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to update position', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isUpdating: false });
     }
   },
 
   deletePosition: async (id) => {
-    set({ loading: true, error: null })
+    set({ isDeleting: true, error: null });
     try {
-      const response = await fetch(`/api/positions/${id}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Failed to delete position')
-
-      set(state => ({
-        positions: state.positions.filter(position => position.id !== id),
+      await api.delete(`/positions/${id}`);
+      set((state) => ({
+        positions: state.positions.filter((position) => position.id !== id),
         currentPosition: null,
-        loading: false
-      }))
+      }));
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to delete position', loading: false })
+      set({ error: (err as Error).message });
+      throw err;
+    } finally {
+      set({ isDeleting: false });
     }
   },
 
-  setFilters: (filters) => set({ filters }),
-  resetFilters: () => set({ filters: {} }),
-  resetState: () => set({
-    positions: [],
-    currentPosition: null,
-    loading: false,
-    error: null,
-    pagination: {
-      page: 1,
-      limit: 10,
+  resetPositionState: () => {
+    set({
+      positions: [],
+      currentPosition: null,
+      isLoading: false,
+      isCreating: false,
+      isUpdating: false,
+      isDeleting: false,
+      error: null,
       total: 0,
-      totalPages: 1
-    },
-    filters: {}
-  })
-}))
-
-export default usePositionStore
+      page: 1,
+      pageSize: 10,
+      totalPages: 0,
+    });
+  },
+}));
