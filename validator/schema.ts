@@ -416,7 +416,33 @@ export const WorkerResponseSchema = WorkerSchema.extend({
   })).optional()
 }).omit({ password: true });
 
+export const WorkerQuerySchema = z.object({
+  // Filtering by basic fields
+  firstname: z.string().optional(),
+  lastname: z.string().optional(),
+  email: z.string().email().optional(),
+  contact: z.string().optional(),
+
+  // Filtering by relationships
+  churchId: z.coerce.number().optional(),
+  positionId: z.coerce.number().optional(),
+
+  // Filtering by worker-specific properties
+  gender: UserGenderSchema.optional(),
+  status: UserStatusSchema.optional(),
+
+  // Filtering by creation date range
+  createdAtFrom: z.coerce.date().optional(),
+  createdAtTo: z.coerce.date().optional(),
+
+  // Pagination and sorting
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().default(10),
+  sort: z.string().optional(),
+});
+
 // Type exports
+export type WorkerQueryType = z.infer<typeof WorkerQuerySchema>;
 export type WorkerCreateType = z.infer<typeof WorkerCreateSchema>;
 export type WorkerUpdateType = z.infer<typeof WorkerUpdateSchema>;
 export type WorkerResponseType = z.infer<typeof WorkerResponseSchema>;
