@@ -46,11 +46,39 @@ export async function POST(request: Request) {
 
 // GET all admins
 export async function GET(request: Request) {
-
-
   try {
+    const { searchParams } = new URL(request.url)
+
+    // Pagination
+    const page = parseInt(searchParams.get('page') || '1')
+    const pageSize = parseInt(searchParams.get('pageSize') || '10')
+
+    // Base filter for admins
+    const where: any = { role: 'admin' }
+
+    // Additional filters
+    if (searchParams.get('name')) {
+      const name = searchParams.get('name')!.toLowerCase()
+      where.OR = [
+        { firstname: { contains: name } },
+        { lastname: { contains: name } }
+      ]
+    }
+    if (searchParams.get('email')) where.email = { contains: searchParams.get('email') }
+
+    // Sorting
+    const orderBy: any = {}
+    const sort = searchParams.get('sort')
+    if (sort) {
+      const [sortField, sortDirection] = sort.split(':')
+      orderBy[sortField] = sortDirection || 'asc'
+    }
+
     const admins = await prisma.user.findMany({
-      where: { role: 'admin' },
+      where,
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
       select: {
         id: true,
         email: true,
@@ -61,10 +89,18 @@ export async function GET(request: Request) {
       }
     })
 
-    return NextResponse.json(admins)
+    const total = await prisma.user.count({ where })
+
+    return NextResponse.json({
+      data: admins,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize)
+    })
   } catch (error) {
     return NextResponse.json(
-      { message: 'Error fetching admins', error: error instanceof Error ? error.message : 'Unknown error' },
+      { message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

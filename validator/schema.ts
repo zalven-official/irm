@@ -244,6 +244,8 @@ export const AdminSchema = z.object({
   firstname: z.string().optional(),
   lastname: z.string().optional(),
   middlename: z.string().optional(),
+  birthday: z.date(),
+  role: z.enum(["admin", "worker"]).default("admin"),
   createdAt: z.date().optional(),
 });
 
@@ -287,7 +289,20 @@ export const AdminResponseSchema = AdminSchema.extend({
 // Array Response Schema
 export const AdminArrayResponseSchema = z.array(AdminResponseSchema);
 
+export const AdminQuerySchema = z.object({
+  email: z.string().email().optional(),
+  firstname: z.string().optional(),
+  lastname: z.string().optional(),
+  middlename: z.string().optional(),
+  createdAtFrom: z.coerce.date().optional(),
+  createdAtTo: z.coerce.date().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().default(10),
+  sort: z.string().optional(),
+});
+
 // Type exports
+export type AdminQueryType = z.infer<typeof AdminQuerySchema>;
 export type AdminCreateType = z.infer<typeof AdminCreateSchema>;
 export type AdminUpdateType = z.infer<typeof AdminUpdateSchema>;
 export type AdminResponseType = z.infer<typeof AdminResponseSchema>;

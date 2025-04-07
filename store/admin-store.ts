@@ -5,6 +5,7 @@ import {
   type AdminUpdateType,
   type AdminResponseType,
   type AdminArrayResponseType,
+  AdminQueryType,
 } from '@/validator/schema';
 
 interface AdminState {
@@ -21,7 +22,7 @@ interface AdminState {
   totalPages: number;
 
   // Admin actions
-  fetchAdmins: () => Promise<void>;
+  fetchAdmins: (query?: AdminQueryType) => Promise<void>;
   getAdminById: (id: number) => Promise<void>;
   createAdmin: (adminData: AdminCreateType) => Promise<AdminResponseType>;
   updateAdmin: (id: number, adminData: AdminUpdateType) => Promise<void>;
@@ -43,12 +44,34 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   page: 1,
   pageSize: 10,
   totalPages: 0,
-
-  fetchAdmins: async () => {
+  fetchAdmins: async (query = {
+    page: 0,
+    pageSize: 0
+  }) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.get<AdminArrayResponseType>('/users/admin');
-      set({ admins: response.data });
+      const params = new URLSearchParams();
+
+      // Convert query object to URL params
+      Object.entries(query).forEach(([key, value]) => {
+        if (value !== undefined) params.append(key, String(value));
+      });
+
+      const response = await api.get<{
+        data: AdminResponseType[];  // Change to AdminResponseType
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+      }>(`/users/admin?${params.toString()}`);  // Update the endpoint to /admins
+
+      set({
+        admins: response.data.data,  // Store admins instead of workers
+        total: response.data.total,
+        page: response.data.page,
+        pageSize: response.data.pageSize,
+        totalPages: response.data.totalPages,
+      });
     } catch (err) {
       set({ error: (err as Error).message });
       throw err;
@@ -56,7 +79,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       set({ isLoading: false });
     }
   },
-
   getAdminById: async (id) => {
     set({ isLoading: true, error: null });
     try {
