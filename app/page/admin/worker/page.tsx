@@ -5,6 +5,7 @@ import { Users } from "lucide-react"
 import { useWorkerStore } from "@/store/worker-store"
 import { DataTable } from "@/components/data-table"
 import { columns } from "@/components/workers/columns"
+import { CreateWorker } from "@/components/workers/create"
 
 export default function WorkerPage() {
   const {
@@ -53,6 +54,8 @@ export default function WorkerPage() {
           <h1 className="text-2xl font-bold">Worker Management</h1>
         </div>
       </div>
+
+      <CreateWorker />
 
       <DataTable
         columns={columns}
